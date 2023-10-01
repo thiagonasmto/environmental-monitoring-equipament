@@ -1,0 +1,6 @@
+{
+    "C_Cpp.dimInactiveRegions": false,
+    "files.associations": {
+        "temperature-with-TMP36.C": "cpp"
+    }
+}
