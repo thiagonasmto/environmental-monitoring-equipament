@@ -2,6 +2,10 @@
 
 Com o objetivo do trabalho em mente, um código em C criado foi criado para controlar um display LCD usando um microcontrolador AVR. O código está configurado para utilizar um microcontrolador com portas de saída e temporização para controlar o display LCD.
 
+| Manipulação dos Registradores no Arduino Mega |
+|-------------------------------|
+|![Arduino-Mega-registers](assets/Arduino-Mega-Pinout-High-Res.jpg)|
+
 ## 🤖 Descrição do [código](src/LCD/LCD.c):
 >1. Inclusão de bibliotecas
 >2. Definição de constantes
