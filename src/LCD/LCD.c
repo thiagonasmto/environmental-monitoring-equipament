@@ -58,11 +58,11 @@ void start() {
     }
 
     pulse_E();
-    cmd_LCD(0x28, 0);
-    cmd_LCD(0x08, 0);
-    cmd_LCD(0x01, 0);
-    cmd_LCD(0x0C, 0);
-    cmd_LCD(0x80, 0);
+    cmd_LCD(0x28, 0); //interface de 4 bits 2 linhas
+    cmd_LCD(0x08, 0); //desliga o display
+    cmd_LCD(0x01, 0); //limpa todo o display
+    cmd_LCD(0x0C, 0); //mensagem aparente cursor inativo não piscando
+    cmd_LCD(0x80, 0); //inicializa cursor na primeira posição a esquerda - 1a linha 
 }
 
 void show_LCD(const char *str) {
