@@ -1,10 +1,28 @@
 # Equipamento de Monitoriamento Ambiental
 
+O projeto de equipamento de monitoriamento ambiental consiste em construir um dispositivo que monitore uma sala de armazenamento de remédios que possua as seguintes especificações:
+
+>- Medição de Temperatura
+>- Medição de Umidade
+>- Detecção de Incêndio
+>- Botão de Controle
+>- Display de LCD
+>- 3 Modos de Configuração
+>- Guardar registros de medições
+
+E utilizando os seguintes componentes:
+
+- Arduino-Mega
+- Sensor de umidade e temperatura
+- Push button
+- Display de LCD (16x2)
+
 Com o objetivo do trabalho em mente, um código em C criado foi criado para controlar um display LCD usando um microcontrolador AVR. O código está configurado para utilizar um microcontrolador com portas de saída e temporização para controlar o display LCD.
 
 | Manipulação dos Registradores no Arduino Mega |
 |-------------------------------|
-|![Arduino-Mega-registers](assets/Arduino-Mega-Pinout-High-Res.jpg)|
+|<img alt="Arduino-Mega-registers" src="assets/Arduino-Mega-Pinout-High-Res.jpg" height="300em"/>|
+
 
 ## 🤖 Descrição do [código](src/LCD/LCD.c):
 >1. Inclusão de bibliotecas
@@ -41,3 +59,16 @@ Com o objetivo do trabalho em mente, um código em C criado foi criado para cont
 | 0xC0                | 192             | Posicionar o cursor na segunda linha e na primeira coluna.                                             |
 | 0x90                | 144             | Posicionar o cursor na primeira linha e na quinta coluna.                                              |
 | 0xD0                | 208             | Posicionar o cursor na segunda linha e na quinta coluna.                                               |
+
+
+## ✍️ Authors
+
+- [Quelita Míriam](https://github.com/quelita2) 👩🏼‍💻
+- [Thiago Lopes](https://github.com/thiagonasmto) 🧑🏼‍💻
+
+---
+
+<div align="center">
+  DCA0119 - Digital Systems (2023.2) <br/>
+  Federal University of Rio Grande do Norte - Department of Computer and Automation Engineering (DCA).
+</div>
