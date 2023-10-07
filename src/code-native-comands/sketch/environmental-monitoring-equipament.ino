@@ -90,51 +90,42 @@ void loop() {
 
   //ALERTAS VISUAIS
   if(set_mode == 1 && (h < value_umi_min || t < value_temp_min)){
-    Serial.println("mode 1: h < min");
     digitalWrite(L_Red, HIGH);
     digitalWrite(L_Yellow, LOW);
     digitalWrite(L_Green, LOW);
   }else if(set_mode == 1 && ((h >= value_umi_min && h <= value_umi_min*1.1) || (t >= value_temp_min && t <= value_temp_min*1.1))){
-    Serial.println("mode 1: h > min*1.1");
     digitalWrite(L_Red, LOW);
     digitalWrite(L_Yellow, HIGH);
     digitalWrite(L_Green, LOW);
   }else if(set_mode == 1 && ((h > value_umi_min) && (t > value_temp_min))){
-    Serial.println("mode 1: h > min");
     digitalWrite(L_Red, LOW);
     digitalWrite(L_Yellow, LOW);
     digitalWrite(L_Green, HIGH);
   }
 
   if(set_mode == 2 && ((h < value_umi_min || h > value_umi_max) || (t < value_temp_min || t > value_temp_max))){
-    Serial.println("Entrou 1");
     digitalWrite(L_Red, HIGH);
     digitalWrite(L_Yellow, LOW);
     digitalWrite(L_Green, LOW);
   }else if(set_mode == 2 && (((h >= value_umi_min && h <= value_umi_min*1.1)||(h <= value_umi_max && h >= value_umi_max*0.9)) || ((t >= value_temp_min && t <= value_temp_min*1.1)||(t <= value_temp_max && t >= value_temp_max*0.9)))){
-    Serial.println("Entrou 2");
     digitalWrite(L_Red, LOW);
     digitalWrite(L_Yellow, HIGH);
     digitalWrite(L_Green, LOW);
   }else if(set_mode == 2 && ((h > value_umi_min && h < value_umi_max) || (t > value_temp_min && t < value_temp_max))){
-    Serial.println("Entrou 3");
     digitalWrite(L_Red, LOW);
     digitalWrite(L_Yellow, LOW);
     digitalWrite(L_Green, HIGH);
   }
 
   if(set_mode == 3 && ((h > value_umi_max) || (t > value_temp_max))){
-    Serial.println("mode 3: h > max");
     digitalWrite(L_Red, HIGH);
     digitalWrite(L_Yellow, LOW);
     digitalWrite(L_Green, LOW);
   }else if(set_mode == 3 && ((h >= value_umi_max*0.9) || (t >= value_temp_max*0.9))) {
-    Serial.println("mode 3: h > faixa");
     digitalWrite(L_Red, LOW);
     digitalWrite(L_Yellow, HIGH);
     digitalWrite(L_Green, LOW);
   }else if(set_mode == 3 && ((h < value_umi_max) || (t < value_temp_max))){
-    Serial.println("mode 3: h < max");
     digitalWrite(L_Red, LOW);
     digitalWrite(L_Yellow, LOW);
     digitalWrite(L_Green, HIGH);
@@ -142,7 +133,7 @@ void loop() {
 
   Serial.println(set_mode);
   
-  Serial.print(F("Umidade: "));
+  Serial.print(F("Umidade:  "));
   Serial.print(h);
   Serial.print(F("%  Temperatura: "));
   Serial.print(t);
@@ -151,7 +142,7 @@ void loop() {
   lcd.setBacklight(HIGH);
 
   lcd.setCursor(0, 0);
-  lcd.printstr("Humidade: ");
+  lcd.printstr("Umidade: ");
   lcd.setCursor(10, 0);
   lcd.print(round(h));
   lcd.setCursor(12, 0);

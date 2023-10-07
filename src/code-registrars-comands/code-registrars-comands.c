@@ -1,8 +1,11 @@
+// Incluisão das bibliotecas
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <stdlib.h>
+#include "DHT.h"
 
+// Configuração os pinos
 #define RS PH3
 #define E PH5
 #define DADOS_LCD PORTA
@@ -14,17 +17,33 @@
 #define led_yellow PC4
 #define led_green PC5
 #define MAX_NUM_STR_LEN 12
+#define DHTPIN 2 
+#define DHTTYPE DHT22 
 
-bool enable_b = 1;
+DHT dht(DHTPIN, DHTTYPE);
+
+// Definindo as variáveis globais
+bool enable_lft = 1;
+bool enable_slt = 1;
+bool enable_rgt = 1;
 bool enable_c = 1;
 bool control_button_lft = 0;
 bool control_button_slt = 0;
 bool control_button_rgt = 0;
+bool set_umi = 1;
+bool set_temp = 0;
 
+int mode = 0;
 int mode_screen = 0;
-int default_umi = 40;
-int default_temp = 20;
+int default_umi_min = 40;
+int default_umi_max = 40;
+int default_temp_min = 20;
+int default_temp_max = 20;
 
+float h;
+float t;
+
+// Responsável por controlar as operações de escrita/leitura no display
 void pulse_E() {
     _delay_ms(1);
     PORTH |= (1 << E);
@@ -33,6 +52,7 @@ void pulse_E() {
     _delay_ms(1);
 }
 
+// Envia comandos para o LCD utilizando a interface de 4 bits
 void cmd_LCD(unsigned char c, char cd) {
     if (cd == 0) {
         PORTH &= ~(1 << RS);
@@ -61,6 +81,7 @@ void cmd_LCD(unsigned char c, char cd) {
     }
 }
 
+// Inicializa as configurações dos pinos, inicializa o LCD e define seu modo de operação
 void start() {
   DDRA = 0b11110000;
   DDRH = 0b00101000;
@@ -91,20 +112,23 @@ void start() {
   }
 
   pulse_E();
-  cmd_LCD(0x28, 0); //interface de 4 bits 2 linhas
-  cmd_LCD(0x08, 0); //desliga o display
-  cmd_LCD(0x01, 0); //limpa todo o display
-  cmd_LCD(0x0C, 0); //mensagem aparente cursor inativo não piscando
-  cmd_LCD(0x80, 0); //inicializa cursor na primeira posição a esquerda - 1a linha 
+
+  // Comandos padrões do Display:
+  cmd_LCD(0x28, 0); // interface de 4 bits 2 linhas
+  cmd_LCD(0x08, 0); // desliga o display
+  cmd_LCD(0x01, 0); // limpa todo o display
+  cmd_LCD(0x0C, 0); // mensagem aparente cursor inativo não piscando
+  cmd_LCD(0x80, 0); // inicializa cursor na primeira posição a esquerda - 1a linha 
 }
 
+// Exibe uma string no LCD
 void show_LCD(const char *str) {
     while (*str) {
         cmd_LCD(*str++, 1);
     }
 }
 
-void printNumberOnLCD(int number) {
+void show_LCD_number(int number) {
     char numStr[MAX_NUM_STR_LEN];  // Array para armazenar a string do número
 
     // Converte o número em uma string
@@ -114,42 +138,78 @@ void printNumberOnLCD(int number) {
     show_LCD(numStr);
 }
 
-//Verifica o click do botão left
+// Converte um número inteiro em uma string e exibe a string no LCD
+void show_LCD_float(float number, int decimalPlaces) {
+    char numStr[MAX_NUM_STR_LEN];  // Array para armazenar a string do número
+
+    // Verifica se o número é negativo
+    int isNegative = 0;
+    if (number < 0) {
+        isNegative = 1;
+        number = -number;
+    }
+
+    // Converte a parte inteira para string
+    int integerPart = (int)number;
+    sprintf(numStr, "%d", integerPart);
+
+    // Adiciona o ponto decimal
+    strcat(numStr, ".");
+
+    // Converte a parte decimal para string
+    float decimalPart = number - integerPart;
+    for (int i = 0; i < decimalPlaces; ++i) {
+        decimalPart *= 10.0;
+    }
+
+    int decimalInt = (int)decimalPart;
+    sprintf(numStr + strlen(numStr), "%d", decimalInt);
+
+    // Adiciona o sinal negativo se necessário
+    if (isNegative) {
+        memmove(numStr + 1, numStr, strlen(numStr) + 1);
+        numStr[0] = '-';
+    }
+
+    // Exibe a string no LCD
+    show_LCD(numStr);
+}
+
+// Verifica o click do botão left
 bool click_left(){
   if (PINC & (1 << button_left)) {
-    // Botão pressionado, desliga o LED
-    PORTC &= ~(1 << led_red);
+    if(enable_lft == 0){
+      enable_lft = 1;
+    }
     return 0;
-  } else {
-    // Botão não pressionado, liga o LED
-    PORTC |= (1 << led_red);
+  } else if(enable_lft == 1){
+    enable_lft = 0;
     return 1;
   }
 }
 
-//Verifica o click do botão select
+// Verifica o click do botão select
 bool click_select() {
   if (PINC & (1 << button_select)) {
-    // Botão não pressionado, desliga o LED
-    PORTC &= ~(1 << led_yellow);
+    if(enable_slt == 0){
+      enable_slt = 1;
+    }
     return 0;
-  } else {
-    // Botão pressionado e enable_b é 1, liga o LED
-    PORTC |= (1 << led_yellow);
+  } else if(enable_slt == 1){
+    enable_slt = 0;
     return 1;
   }
-  return 0;
 }
 
-//Verifica o click do botão rigth
-bool click_rigth(){
+// Verifica o click do botão rigth
+bool click_right(){
   if (PINC & (1 << button_rigth)) {
-    // Botão pressionado, desliga o LED
-    PORTC &= ~(1 << led_green);
+    if(enable_rgt == 0){
+      enable_rgt = 1;
+    }
     return 0;
-  } else {
-    // Botão não pressionado, liga o LED
-    PORTC |= (1 << led_green);
+  } else if(enable_rgt == 1){
+    enable_rgt = 0;
     return 1;
   }
 }
@@ -171,50 +231,78 @@ void posicionar_cursor(unsigned char linha, unsigned char coluna) {
     cmd_LCD(posicao_cursor, 0);
 }
 
+// Tela principal: mostra a porcentagem da Umidade e Temperatura
 void screen_1(){
+  // Limpa a tela do Display
   if(enable_c == 1){
     cmd_LCD(0x01, 0);
     enable_c = 0;
   }
+
+  // Enquanto o botão de seleção não for pressionado, exibir a tela de porcentagem da Umidade e Temperatura
   while(!click_select()){
+    _delay_ms(250);
+    h = dht.readHumidity();
+    // Temperature em Celsius (default)
+    _delay_ms(250);
+    t = dht.readTemperature();
+
     posicionar_cursor(1, 1);
-    show_LCD("Umidade:");
+    show_LCD("Umidade: ");
+    posicionar_cursor(1, 10);
+    show_LCD_float(h, 1);
+    posicionar_cursor(1, 14);
+    show_LCD(" %");
     posicionar_cursor(2, 1);
-    show_LCD("Temp:");
+    show_LCD("Temp: ");
+    posicionar_cursor(2, 7);
+    show_LCD_float(t, 1);
+    posicionar_cursor(2, 12);
+    cmd_LCD(223, 1);
+    posicionar_cursor(2, 13);
+    show_LCD("C");
+    alert_led();
   }
-  Serial.println("Saiu do while");
+
   mode_screen = 1;
   enable_c = 1;
 }
 
+// Tela 2: Configuração
 void screen_2(){
+  // Limpa a tela do Display
   if(enable_c == 1){
     cmd_LCD(0x01, 0);
     enable_c = 0;
   }
+
+  // Permanecer na tela de configuração enquanto n aperta-se outro botão
   while(mode_screen == 1){
     posicionar_cursor(1, 4);
     show_LCD("Configurar");
     posicionar_cursor(2, 5);
     show_LCD("1  2  3");
-    control_button_lft = click_left();
-    control_button_slt = click_select();
-    control_button_rgt = click_rigth();
-    if(control_button_lft){
+    
+    if(click_left()){
+      mode = 1;
       mode_screen = 2;
       enable_c = 1;
-    }else if(control_button_slt){
-      mode_screen = 6;
+    }else if(click_select()){
+      mode = 2;
+      mode_screen = 2;
       enable_c = 1;
-    }else if(control_button_rgt){
-      mode_screen = 3;
+    }else if(click_right()){
+      mode = 3;
+      mode_screen = 2;
       enable_c = 1;
     }
   }
-  Serial.println("Saiu do while 2");
 }
 
+// Configurando a umidade
 void screen_3(){
+  // Serial.print("Modo selecionado: ");
+  // Serial.println(mode);
   if(enable_c == 1){
     cmd_LCD(0x01, 0);
     enable_c = 0;
@@ -222,44 +310,134 @@ void screen_3(){
   while(mode_screen == 2){
     posicionar_cursor(1, 4);
     show_LCD("Configurar");
-    posicionar_cursor(2, 5);
-    show_LCD("Umidade");
-    control_button_lft = click_left();
+
+    if(set_umi == 1){
+      posicionar_cursor(2, 3);
+      show_LCD("  Umidade  ");
+      // Serial.print("set_umi: ");
+      // Serial.println(set_umi);
+    }else if(set_temp == 1){
+      posicionar_cursor(2, 3);
+      show_LCD("Temperatura");
+      // Serial.print("set_temp: ");
+      // Serial.println(set_temp);
+    }
+
     control_button_slt = click_select();
-    control_button_rgt = click_rigth();
-    if(control_button_slt){
-      mode_screen = 4;
-      enable_c = 1;
-    }else if(control_button_rgt){
+    
+    if(control_button_slt && mode == 1 && set_umi == 1 && set_temp == 0){
+      default_umi_max = 100;
       mode_screen = 3;
       enable_c = 1;
+    }else if(control_button_slt && mode == 1 && set_umi == 0 && set_temp == 1){
+      default_temp_max = 80;
+      mode_screen = 3;
+      enable_c = 1;
+    }if(control_button_slt && mode == 2 && set_umi == 1){
+      mode_screen = 3;
+      enable_c = 1;
+    }else if(control_button_slt && mode == 2 && set_temp == 1){
+      mode_screen = 3;
+      enable_c = 1;
+    }if(control_button_slt && mode == 3 && set_umi == 1){
+      default_umi_min = 0;
+      mode_screen = 4;
+      enable_c = 1;
+    }else if(control_button_slt && mode == 3 && set_temp == 1){
+      default_temp_min = -40;
+      mode_screen = 4;
+      enable_c = 1;
+    }else if(click_right()){
+      set_umi = 0;
+      set_temp = 1;
+    }else if(click_left()){
+      set_umi = 1;
+      set_temp = 0;
     }
   }
-  Serial.println("Saiu do while 3");
 }
 
+// Configurando a Temperatura
 void screen_4(){
   if(enable_c == 1){
     cmd_LCD(0x01, 0);
     enable_c = 0;
   }
   while(mode_screen == 3){
-    posicionar_cursor(1, 4);
-    show_LCD("Configurar");
-    posicionar_cursor(2, 3);
-    show_LCD("Temperatura");
-    control_button_lft = click_left();
-    control_button_slt = click_select();
-    control_button_rgt = click_rigth();
-    if(control_button_slt){
-      mode_screen = 5;
-      enable_c = 1;
-    }else if(control_button_lft){
-      mode_screen = 2;
-      enable_c = 1;
+    if(mode == 1 && set_umi == 1){
+      posicionar_cursor(1, 3);
+      show_LCD("Ajuste o min");
+      posicionar_cursor(2, 1);
+      show_LCD("Umidade: ");
+      posicionar_cursor(2, 10);
+      show_LCD_float(default_umi_min, 1);
+
+      control_button_slt = click_select();
+
+      if(click_left()){
+        default_umi_min = default_umi_min - 1;
+      }else if(click_right()){
+        default_umi_min = default_umi_min + 1;
+      }else if(control_button_slt){
+        mode_screen = 0;
+        enable_c = 1;
+      }
+    }else if(mode == 1 && set_temp == 1){
+      posicionar_cursor(1, 3);
+      show_LCD("Ajuste o min");
+      posicionar_cursor(2, 1);
+      show_LCD("Temperatura: ");
+      posicionar_cursor(2, 14);
+      show_LCD_float(default_temp_min, 1);
+    
+      control_button_slt = click_select();
+
+      if(click_left()){
+        default_temp_min = default_temp_min - 1;
+      }else if(click_right()){
+        default_temp_min = default_temp_min + 1;
+      }else if(control_button_slt){
+        mode_screen = 0;
+        enable_c = 1;
+      }
+    }else if(mode == 2 && set_umi == 1){
+      posicionar_cursor(1, 3);
+      show_LCD("Ajuste o min");
+      posicionar_cursor(2, 1);
+      show_LCD("Umidade: ");
+      posicionar_cursor(2, 10);
+      show_LCD_float(default_umi_min, 1);
+
+      control_button_slt = click_select();
+
+      if(click_left()){
+        default_umi_min = default_umi_min - 1;
+      }else if(click_right()){
+        default_umi_min = default_umi_min + 1;
+      }else if(control_button_slt){
+        mode_screen = 4;
+        enable_c = 1;
+      }
+    }else if(mode == 2 && set_temp == 1){
+      posicionar_cursor(1, 3);
+      show_LCD("Ajuste o min");
+      posicionar_cursor(2, 1);
+      show_LCD("Temperatura: ");
+      posicionar_cursor(2, 14);
+      show_LCD_float(default_temp_min, 1);
+    
+      control_button_slt = click_select();
+
+      if(click_left()){
+        default_temp_min = default_temp_min - 1;
+      }else if(click_right()){
+        default_temp_min = default_temp_min + 1;
+      }else if(control_button_slt){
+        mode_screen = 4;
+        enable_c = 1;
+      }
     }
   }
-  Serial.println("Saiu do while 4");
 }
 
 void screen_5(){
@@ -268,54 +446,136 @@ void screen_5(){
     enable_c = 0;
   }
   while(mode_screen == 4){
-    posicionar_cursor(1, 3);
-    show_LCD("Ajuste o min");
-    posicionar_cursor(2, 1);
-    show_LCD("Umidade: ");
-    posicionar_cursor(2, 10);
-    printNumberOnLCD(default_umi);
-    control_button_lft = click_left();
-    control_button_slt = click_select();
-    control_button_rgt = click_rigth();
-    if(control_button_lft){
-      default_umi = default_umi - 1;
-    }else if(control_button_rgt){
-      default_umi = default_umi + 1;
-    }else if(control_button_slt){
-      mode_screen = 0;
-      enable_c = 1;
+    if(mode == 3 && set_umi == 1){
+      posicionar_cursor(1, 3);
+      show_LCD("Ajuste o max");
+      posicionar_cursor(2, 1);
+      show_LCD("Umidade: ");
+      posicionar_cursor(2, 10);
+      show_LCD_float(default_umi_max, 1);
+
+      control_button_slt = click_select();
+
+      if(click_left()){
+        default_umi_max = default_umi_max - 1;
+      }else if(click_right()){
+        default_umi_max = default_umi_max + 1;
+      }else if(control_button_slt){
+        mode_screen = 0;
+        enable_c = 1;
+      }
+    }else if(mode == 3 && set_temp == 1){
+      posicionar_cursor(1, 3);
+      show_LCD("Ajuste o max");
+      posicionar_cursor(2, 1);
+      show_LCD("Temperatura: ");
+      posicionar_cursor(2, 14);
+      show_LCD_float(default_temp_max, 1);
+    
+      control_button_slt = click_select();
+
+      if(click_left()){
+        default_temp_max = default_temp_max - 1;
+      }else if(click_right()){
+        default_temp_max = default_temp_max + 1;
+      }else if(control_button_slt){
+        mode_screen = 0;
+        enable_c = 1;
+      }
+    }else if(mode == 2 && set_umi == 1){
+      posicionar_cursor(1, 3);
+      show_LCD("Ajuste o max");
+      posicionar_cursor(2, 1);
+      show_LCD("Umidade: ");
+      posicionar_cursor(2, 10);
+      show_LCD_float(default_umi_max, 1);
+
+      control_button_slt = click_select();
+
+      if(click_left()){
+        default_umi_max = default_umi_max - 1;
+      }else if(click_right()){
+        default_umi_max = default_umi_max + 1;
+      }else if(control_button_slt){
+        mode_screen = 0;
+        enable_c = 1;
+      }
+    }else if(mode == 2 && set_temp == 1){
+      posicionar_cursor(1, 3);
+      show_LCD("Ajuste o max");
+      posicionar_cursor(2, 1);
+      show_LCD("Temperatura: ");
+      posicionar_cursor(2, 14);
+      show_LCD_float(default_temp_max, 1);
+    
+      control_button_slt = click_select();
+
+      if(click_left()){
+        default_temp_max = default_temp_max - 1;
+      }else if(click_right()){
+        default_temp_max = default_temp_max + 1;
+      }else if(control_button_slt){
+        mode_screen = 0;
+        enable_c = 1;
+      }
     }
   }
-  _delay_ms(250);
-  Serial.println("Saiu do while 5");
 }
 
-void screen_6(){
-  if(enable_c == 1){
-    cmd_LCD(0x01, 0);
-    enable_c = 0;
+void alert_led(){
+  Serial.println("Entrou nos leds");
+  Serial.print("Modo: ");
+  Serial.println(mode);
+  if(mode == 1 && (h < default_umi_min || t < default_temp_min)){
+    Serial.println("Entrou 1");
+    PORTC |= (1 << led_red);
+    PORTC &= ~(1 << led_yellow);
+    PORTC &= ~(1 << led_green);
+  }else if(mode == 1 && ((h >= default_umi_min && h <= default_umi_min*1.1) || (t >= default_temp_min && t <= default_temp_min*1.1))){
+    Serial.println("Entrou 2");
+    PORTC &= ~(1 << led_red);
+    PORTC |= (1 << led_yellow);
+    PORTC &= ~(1 << led_green);
+  }else if(mode == 1 && ((h > default_umi_min) && (t > default_temp_min))){
+    Serial.println("Entrou 3");
+    PORTC &= ~(1 << led_red);
+    PORTC &= ~(1 << led_yellow);
+    PORTC |= (1 << led_green);
   }
-  while(mode_screen == 5){
-    posicionar_cursor(1, 3);
-    show_LCD("Ajuste o min");
-    posicionar_cursor(2, 1);
-    show_LCD("Temperatura: ");
-    posicionar_cursor(2, 14);
-    printNumberOnLCD(default_temp);
-    control_button_lft = click_left();
-    control_button_slt = click_select();
-    control_button_rgt = click_rigth();
-    if(control_button_lft){
-      default_temp = default_temp - 1;
-    }else if(control_button_rgt){
-      default_temp = default_temp + 1;
-    }else if(control_button_slt){
-      mode_screen = 0;
-      enable_c = 1;
-    }
+
+  if(mode == 2 && ((h < default_umi_min || h > default_umi_max) || (t < default_temp_min || t > default_temp_max))){
+    Serial.println("Entrou 4");
+    PORTC |= (1 << led_red);
+    PORTC &= ~(1 << led_yellow);
+    PORTC &= ~(1 << led_green);
+  }else if(mode == 2 && (((h >= default_umi_min && h <= default_umi_min*1.1)||(h <= default_umi_max && h >= default_umi_max*0.9)) || ((t >= default_temp_min && t <= default_temp_min*1.1)||(t <= default_temp_max && t >= default_temp_max*0.9)))){
+    Serial.println("Entrou 5");
+    PORTC &= ~(1 << led_red);
+    PORTC |= (1 << led_yellow);
+    PORTC &= ~(1 << led_green);
+  }else if(mode == 2 && ((h > default_umi_min && h < default_umi_max) || (t > default_temp_min && t < default_temp_max))){
+    Serial.println("Entrou 6");
+    PORTC &= ~(1 << led_red);
+    PORTC &= ~(1 << led_yellow);
+    PORTC |= (1 << led_green);
   }
-  _delay_ms(250);
-  Serial.println("Saiu do while 6");
+
+  if(mode == 3 && ((h > default_umi_max) || (t > default_temp_max))){
+    Serial.println("Entrou 7");
+    PORTC |= (1 << led_red);
+    PORTC &= ~(1 << led_yellow);
+    PORTC &= ~(1 << led_green);
+  }else if(mode == 3 && ((h >= default_umi_max*0.9) || (t >= default_temp_max*0.9))) {
+    Serial.println("Entrou 8");
+    PORTC &= ~(1 << led_red);
+    PORTC |= (1 << led_yellow);
+    PORTC &= ~(1 << led_green);
+  }else if(mode == 3 && ((h < default_umi_max) || (t < default_temp_max))){
+    Serial.println("Entrou 9");
+    PORTC &= ~(1 << led_red);
+    PORTC &= ~(1 << led_yellow);
+    PORTC |= (1 << led_green);
+  }
 }
 
 // Detecção do click select
@@ -324,15 +584,18 @@ void screen_6(){
 //   PORTC |= (1 << led_yellow);
 // }
 
+// O sistema está pronto para operar e é inicializado
 void setup(){
   Serial.begin(9600);
+  dht.begin();
   start();
 }
 
 void loop() {
   click_left();
   click_select();
-  click_rigth();
+  click_right();
+
   if(mode_screen == 0){
     screen_1();
   }else if(mode_screen == 1){
@@ -343,7 +606,5 @@ void loop() {
     screen_4();
   }else if(mode_screen == 4){
     screen_5();
-  }else if(mode_screen == 5){
-    screen_6();
   }
 }
