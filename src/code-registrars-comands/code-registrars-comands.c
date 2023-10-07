@@ -301,8 +301,6 @@ void screen_2(){
 
 // Configurando a umidade
 void screen_3(){
-  // Serial.print("Modo selecionado: ");
-  // Serial.println(mode);
   if(enable_c == 1){
     cmd_LCD(0x01, 0);
     enable_c = 0;
@@ -314,13 +312,9 @@ void screen_3(){
     if(set_umi == 1){
       posicionar_cursor(2, 3);
       show_LCD("  Umidade  ");
-      // Serial.print("set_umi: ");
-      // Serial.println(set_umi);
     }else if(set_temp == 1){
       posicionar_cursor(2, 3);
       show_LCD("Temperatura");
-      // Serial.print("set_temp: ");
-      // Serial.println(set_temp);
     }
 
     control_button_slt = click_select();
@@ -523,55 +517,43 @@ void screen_5(){
 }
 
 void alert_led(){
-  Serial.println("Entrou nos leds");
-  Serial.print("Modo: ");
-  Serial.println(mode);
   if(mode == 1 && (h < default_umi_min || t < default_temp_min)){
-    Serial.println("Entrou 1");
     PORTC |= (1 << led_red);
     PORTC &= ~(1 << led_yellow);
     PORTC &= ~(1 << led_green);
   }else if(mode == 1 && ((h >= default_umi_min && h <= default_umi_min*1.1) || (t >= default_temp_min && t <= default_temp_min*1.1))){
-    Serial.println("Entrou 2");
     PORTC &= ~(1 << led_red);
     PORTC |= (1 << led_yellow);
     PORTC &= ~(1 << led_green);
   }else if(mode == 1 && ((h > default_umi_min) && (t > default_temp_min))){
-    Serial.println("Entrou 3");
     PORTC &= ~(1 << led_red);
     PORTC &= ~(1 << led_yellow);
     PORTC |= (1 << led_green);
   }
 
   if(mode == 2 && ((h < default_umi_min || h > default_umi_max) || (t < default_temp_min || t > default_temp_max))){
-    Serial.println("Entrou 4");
     PORTC |= (1 << led_red);
     PORTC &= ~(1 << led_yellow);
     PORTC &= ~(1 << led_green);
   }else if(mode == 2 && (((h >= default_umi_min && h <= default_umi_min*1.1)||(h <= default_umi_max && h >= default_umi_max*0.9)) || ((t >= default_temp_min && t <= default_temp_min*1.1)||(t <= default_temp_max && t >= default_temp_max*0.9)))){
-    Serial.println("Entrou 5");
     PORTC &= ~(1 << led_red);
     PORTC |= (1 << led_yellow);
     PORTC &= ~(1 << led_green);
   }else if(mode == 2 && ((h > default_umi_min && h < default_umi_max) || (t > default_temp_min && t < default_temp_max))){
-    Serial.println("Entrou 6");
     PORTC &= ~(1 << led_red);
     PORTC &= ~(1 << led_yellow);
     PORTC |= (1 << led_green);
   }
 
   if(mode == 3 && ((h > default_umi_max) || (t > default_temp_max))){
-    Serial.println("Entrou 7");
     PORTC |= (1 << led_red);
     PORTC &= ~(1 << led_yellow);
     PORTC &= ~(1 << led_green);
   }else if(mode == 3 && ((h >= default_umi_max*0.9) || (t >= default_temp_max*0.9))) {
-    Serial.println("Entrou 8");
     PORTC &= ~(1 << led_red);
     PORTC |= (1 << led_yellow);
     PORTC &= ~(1 << led_green);
   }else if(mode == 3 && ((h < default_umi_max) || (t < default_temp_max))){
-    Serial.println("Entrou 9");
     PORTC &= ~(1 << led_red);
     PORTC &= ~(1 << led_yellow);
     PORTC |= (1 << led_green);
@@ -585,17 +567,13 @@ void alert_led(){
 // }
 
 // O sistema está pronto para operar e é inicializado
+
 void setup(){
-  Serial.begin(9600);
   dht.begin();
   start();
 }
 
 void loop() {
-  click_left();
-  click_select();
-  click_right();
-
   if(mode_screen == 0){
     screen_1();
   }else if(mode_screen == 1){
