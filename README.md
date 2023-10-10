@@ -60,6 +60,9 @@ Com o objetivo do trabalho em mente, um código em C criado foi criado para cont
 | 0x90                | 144             | Posicionar o cursor na primeira linha e na quinta coluna.                                              |
 | 0xD0                | 208             | Posicionar o cursor na segunda linha e na quinta coluna.                                               |
 
+## 🚀 Simulação do Sistema
+
+Para visualizar uma simulação do sistema de monitoramento ambiental em ação, confira [este link](https://www.loom.com/share/657320af3b4c44f0aaf78eeba94cd8a4?sid=b937ec63-254c-4ddb-9b63-85fcbb1e88e6). A simulação demonstra o funcionamento do equipamento, incluindo a medição de temperatura, umidade, e outras funcionalidades. 
 
 ## ✍️ Authors
 
