@@ -3,7 +3,7 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <stdlib.h>
-#include "DHT.h"
+//#include "DHT.h"
 
 // Configuração os pinos
 #define RS PH3
@@ -19,6 +19,7 @@
 #define led_green PC5
 #define MAX_NUM_STR_LEN 12
 #define DHT22_PIN PE4
+#define DHT_PIN PE4
 #define POTENTIOMETER_PIN PF0
 #define BUFFER_SIZE 100
 
@@ -39,6 +40,7 @@ int default_umi_min = 40;
 int default_umi_max = 40;
 int default_temp_min = 20;
 int default_temp_max = 20;
+uint8_t humidity11, temperature11;
 uint16_t humidity, temperature, potValue;
 uint16_t umidadeBuffer[BUFFER_SIZE]; // Arrays para armazenar os últimos valores de umidade e temperatura
 uint16_t temperaturaBuffer[BUFFER_SIZE];
@@ -133,12 +135,66 @@ void getData(uint16_t *humidity, uint16_t *temperature) {
 }
 
 float convertTemperature(uint16_t temperature) {
-    return (float)temperature / 10.0;
+    return (float)temperature/10.0;
 }
 
 float convertHumidity(uint16_t humidity) {
-    return (float)humidity / 10.0;
+    return (float)humidity/10.0;
 }
+
+void startSignalDHT11() {
+    DDRE |= (1 << DHT_PIN);       // Configura o pino como saída
+    PORTE &= ~(1 << DHT_PIN);     // Envia sinal baixo
+    _delay_ms(18);                // Duração mínima do sinal baixo para iniciar a comunicação
+    PORTE |= (1 << DHT_PIN);      // Envia sinal alto
+    _delay_us(20);                // Duração do sinal alto
+}
+
+void responseSignalDHT11() {
+    DDRE &= ~(1 << DHT_PIN);      // Configura o pino como entrada
+    while (PINE & (1 << DHT_PIN));   // Espera pelo pulso baixo
+    while (!(PINE & (1 << DHT_PIN)));  // Espera pelo pulso alto
+    while (PINE & (1 << DHT_PIN));    // Espera pelo pulso baixo
+}
+
+uint8_t readDHT11Byte() {
+    uint8_t dataByte = 0;
+    for (uint8_t i = 0; i < 8; i++) {
+        while (!(PINE & (1 << DHT_PIN)));   // Espera pelo bit de dados (pulso alto)
+        _delay_us(30);  // Duração mínima do bit de dados de acordo com a especificação do DHT11
+        if (PINE & (1 << DHT_PIN))
+            dataByte = (dataByte << 1) | 0x01;
+        else
+            dataByte = (dataByte << 1);
+        while (PINE & (1 << DHT_PIN));    // Espera pelo pulso baixo
+    }
+    return dataByte;
+}
+
+void getDataDHT11(uint16_t *humidity, uint16_t *temperature) {
+    startSignalDHT11();
+    Serial.println("Passou");
+    responseSignalDHT11();
+
+    uint8_t RH_low, RH_high, temp_low, temp_high, checksum;
+    RH_high = readDHT11Byte();
+    RH_low = readDHT11Byte();
+    temp_high = readDHT11Byte();
+    temp_low = readDHT11Byte();
+    checksum = readDHT11Byte();
+
+    *humidity = RH_high;
+    *temperature = temp_high;
+}
+
+float convertTemperatureDHT11(uint16_t temperature) {
+    return (float)temperature;
+}
+
+float convertHumidityDHT11(uint16_t humidity) {
+    return (float)humidity;
+}
+
 
 // Envia comandos para o LCD utilizando a interface de 4 bits
 void cmd_LCD(unsigned char c, char cd) {
@@ -298,9 +354,11 @@ void screen_1(){
 
   // Enquanto o botão de seleção não for pressionado, exibir a tela de porcentagem da Umidade e Temperatura
   while(control_button_slt == 1){
-    getData(&humidity, &temperature);
-    t = convertTemperature(temperature);
-    h = convertHumidity(humidity);
+    //getData(&humidity, &temperature);
+    getDataDHT11(&humidity, &temperature);
+    t = convertTemperatureDHT11(temperature);
+    h = convertHumidityDHT11(humidity);
+    Serial.print(h);
     armazenarDados(h, t);
     potValue = readPotentiometer();
 
@@ -325,6 +383,7 @@ void screen_1(){
       alert_led();
     }else if(potValue > 1024/2){
       PORTH |= (1 << BUZZER);
+      PORTC |= (1 << led_red);
       cmd_LCD(0x01, 0);
       posicionar_cursor(1, 5);
       show_LCD("ALERTA!!");
@@ -332,23 +391,24 @@ void screen_1(){
       show_LCD("Fogo!!");
       _delay_ms(2000);
       cmd_LCD(0x01, 0);
+    }else{
+      PORTH &= ~(1 << BUZZER);
+      posicionar_cursor(1, 1);
+      show_LCD("Umidade: ");
+      posicionar_cursor(1, 10);
+      show_LCD_float(h, 1);
+      posicionar_cursor(1, 14);
+      show_LCD(" %");
+      posicionar_cursor(2, 1);
+      show_LCD("Temp: ");
+      posicionar_cursor(2, 7);
+      show_LCD_float(t, 1);
+      posicionar_cursor(2, 12);
+      cmd_LCD(223, 1);
+      posicionar_cursor(2, 13);
+      show_LCD("C   ");
+      alert_led();
     }
-    PORTH &= ~(1 << BUZZER);
-    posicionar_cursor(1, 1);
-    show_LCD("Umidade: ");
-    posicionar_cursor(1, 10);
-    show_LCD_float(h, 1);
-    posicionar_cursor(1, 14);
-    show_LCD(" %");
-    posicionar_cursor(2, 1);
-    show_LCD("Temp: ");
-    posicionar_cursor(2, 7);
-    show_LCD_float(t, 1);
-    posicionar_cursor(2, 12);
-    cmd_LCD(223, 1);
-    posicionar_cursor(2, 13);
-    show_LCD("C   ");
-    alert_led();
   }
   mode_screen = 1;
   enable_c = 1;
@@ -708,6 +768,10 @@ int main() {
   show_LCD("Solutions");
   _delay_ms(2000);
   while(true){
+    posicionar_cursor(1, 4);
+    show_LCD("InovaTech");
+    posicionar_cursor(2, 4);
+    show_LCD("Solutions");
     if(mode_screen == 0){
       screen_1();
     }else if(mode_screen == 1){
