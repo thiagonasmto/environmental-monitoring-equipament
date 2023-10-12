@@ -326,7 +326,7 @@ void screen_6(){
       default_temp = default_temp - 1;
     }else if(click_right()){
       default_temp = default_temp + 1;
-    }else if(click_select() && enable_c==1){
+    }else if(click_select() && enable){
       mode_screen = 0;
     }
     enable_c = 1;

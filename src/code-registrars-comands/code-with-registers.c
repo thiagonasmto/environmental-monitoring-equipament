@@ -40,6 +40,7 @@ int default_umi_min = 40;
 int default_umi_max = 40;
 int default_temp_min = 20;
 int default_temp_max = 20;
+int amostragem = 1;
 uint8_t humidity11, temperature11;
 uint16_t humidity, temperature, potValue;
 uint16_t umidadeBuffer[BUFFER_SIZE]; // Arrays para armazenar os últimos valores de umidade e temperatura
@@ -385,6 +386,8 @@ void screen_1(){
     armazenarDados(h, t);
     potValue = readPotentiometer();
 
+    Serial.print("Coleta de dados em ");
+    Serial.println(amostragem);
     if(h < 30 && t > 60 && potValue < 1024/2){
       PORTH &= ~(1 << BUZZER);
       posicionar_cursor(1, 1);
@@ -433,6 +436,9 @@ void screen_1(){
       alert_led();
     }
   }
+  for(int i = 0; i < amostragem; i++){ 
+      _delay_ms(1000);
+  }
   mode_screen = 1;
   enable_c = 1;
 }
@@ -462,22 +468,22 @@ void screen_2(){
     show_LCD("  1     2     3 ");
     
     if(control_button_lft == 0){
-      mode = 1;
-      mode_screen = 2;
-      enable_c = 1;
-    }else if(control_button_slt == 0){
       mode = 2;
       mode_screen = 2;
       enable_c = 1;
+    }else if(control_button_slt == 0){
+      mode = 5;
+      mode_screen = 5;
+      enable_c = 1;
     }else if(control_button_rgt == 0){
-      mode = 3;
-      mode_screen = 2;
+      mode = 8;
+      mode_screen = 8;
       enable_c = 1;
     }
   }
 }
 
-// Configurando a umidade
+// Configurando a Temperatura
 void screen_3(){
   if(enable_c == 1){
     cmd_LCD(0x01, 0);
@@ -493,21 +499,29 @@ void screen_3(){
     show_LCD("Min");
     posicionar_cursor(2,8);
     cmd_LCD(127,15);
-    posicionar_cursor(2,12);
+    posicionar_cursor(2,13);
     show_LCD("Max");
+    
+    Serial.println(mode_screen);
     
     if(control_button_lft == 0){
       mode = 3;
       mode_screen = 3;
       enable_c = 1;
+      Serial.println("Indo para tela 4");
+      Serial.println(mode_screen);
     }else if(control_button_slt == 0){
-      mode = 0;
-      mode_screen = 0;
+      mode = 1;
+      mode_screen = 1;
       enable_c = 1;
+      Serial.println("Indo para tela 2");
+      Serial.println(mode_screen);
     }else if(control_button_rgt == 0){
-      mode = 5;
-      mode_screen = 5;
+      mode = 4;
+      mode_screen = 4;
       enable_c = 1;
+      Serial.println("Indo para tela 5");
+      Serial.println(mode_screen);
     }
   }
 }
@@ -522,49 +536,28 @@ void screen_4(){
     control_button_lft = 1;
     control_button_slt = 1;
     control_button_rgt = 1;
-    if(mode == 1 && set_temp == 1){
-      posicionar_cursor(1, 3);
-      show_LCD("Temperatura Min");
-      posicionar_cursor(2,21);
-      show_LCD("+");
-      posicionar_cursor(2,15);
-      show_LCD("-");
-      posicionar_cursor(2, 8);
-      show_LCD_float(default_temp_min, 1);
+
+    posicionar_cursor(1,1);
+    show_LCD("Temperatura Min:");
+    posicionar_cursor(2,2);
+    show_LCD("-");
+    posicionar_cursor(2,15);
+    show_LCD("+");
+    posicionar_cursor(2, 7);
+    show_LCD_float(default_temp_min, 1);
     
       //control_button_slt = click_select();
 
-      if(control_button_lft == 0){
-        default_temp_min = default_temp_min - 1;
-      }else if(control_button_rgt == 0){
-        default_temp_min = default_temp_min + 1;
-      }else if(control_button_slt == 0){
-        mode_screen = 0;
-        enable_c = 1;
-        control_button_lft = 1;
-        control_button_slt = 1;
-        control_button_rgt = 1;
-      }
-    }else if(mode == 2 && set_temp == 1){
-      posicionar_cursor(1, 3);
-      show_LCD("Temperatura Min");
-      posicionar_cursor(2,21);
-      show_LCD("+");
-      posicionar_cursor(2,15);
-      show_LCD("-");
-      posicionar_cursor(2, 8);
-      show_LCD_float(default_temp_min, 1);
-    
-      //control_button_slt = click_select();
-
-      if(control_button_lft == 0){
-        default_temp_min = default_temp_min - 1;
-      }else if(control_button_rgt == 0){
-        default_temp_min = default_temp_min + 1;
-      }else if(control_button_slt == 0){
-        mode_screen = 4;
-        enable_c = 1;
-      }
+    if(control_button_lft == 0){
+      default_temp_min = default_temp_min - 1;
+    }else if(control_button_rgt == 0){
+      default_temp_min = default_temp_min + 1;
+    }else if(control_button_slt == 0){
+      mode_screen = 0;
+      enable_c = 1;
+      control_button_lft = 1;
+      control_button_slt = 1;
+      control_button_rgt = 1;
     }
   }
 }
@@ -579,215 +572,239 @@ void screen_5(){
     control_button_lft = 1;
     control_button_slt = 1;
     control_button_rgt = 1;
-    
-    if(mode == 3 && set_temp == 1){
-      posicionar_cursor(1, 3);
-      show_LCD("Temperatura max");
-      posicionar_cursor(2, 2);
-      show_LCD("+");
-      posicionar_cursor(2, 15);
-      show_LCD("-");
-      posicionar_cursor(2, 8);
-      show_LCD_float(default_temp_max, 1);
-    
-      //control_button_slt = click_select();
 
-      if(control_button_lft == 0){
-        default_temp_max = default_temp_max - 1;
-      }else if(control_button_rgt == 0){
-        default_temp_max = default_temp_max + 1;
-      }else if(control_button_slt == 0){
-        mode_screen = 0;
-        enable_c = 1;
-        control_button_lft = 1;
-        control_button_slt = 1;
-        control_button_rgt = 1;
-      }
-    }else if(mode == 2 && set_temp == 1){
-      posicionar_cursor(1, 3);
-      show_LCD("Temperatura max");
-      posicionar_cursor(2, 2);
-      show_LCD("+");
-      posicionar_cursor(2, 15);
-      show_LCD("-");
-      posicionar_cursor(2, 14);
-      show_LCD_float(default_temp_max, 1);
-    
-      //control_button_slt = click_select();
+    posicionar_cursor(1, 1);
+    show_LCD("Temperatura Max:");
+    posicionar_cursor(2, 2);
+    show_LCD("-");
+    posicionar_cursor(2, 15);    
+    show_LCD("+");
+    posicionar_cursor(2, 7);
+    show_LCD_float(default_temp_max, 1);
+  
+    //control_button_slt = click_select();
 
-      if(control_button_lft == 0){
-        default_temp_max = default_temp_max - 1;
-      }else if(control_button_rgt == 0){
-        default_temp_max = default_temp_max + 1;
-      }else if(control_button_slt == 0){
-        mode_screen = 0;
-        enable_c = 1;
-        control_button_lft = 1;
-        control_button_slt = 1;
-        control_button_rgt = 1;
-      }
+    if(control_button_lft == 0){
+      default_temp_max = default_temp_max - 1;
+    }else if(control_button_rgt == 0){
+      default_temp_max = default_temp_max + 1;
+    }else if(control_button_slt == 0){
+      mode_screen = 0;
+      enable_c = 1;
+      control_button_lft = 1;
+      control_button_slt = 1;
+      control_button_rgt = 1;
     }
   }
 }
 
-// Ajustando Umidade Mínima
+// Configurando a Umidade
 void screen_6(){
   if(enable_c == 1){
     cmd_LCD(0x01, 0);
     enable_c = 0;
   }
-
   while(mode_screen == 5){
     control_button_lft = 1;
     control_button_slt = 1;
     control_button_rgt = 1;
-    if(mode == 1 && set_umi == 1){
-      posicionar_cursor(1, 3);
-      show_LCD("Umidade Min");
-      posicionar_cursor(2, 3);
-      show_LCD("+");
-      posicionar_cursor(2,14);
-      show_LCD("-");
-      posicionar_cursor(2, 10);
-      show_LCD_float(default_umi_min, 1);
 
-      //control_button_slt = click_select();
-
-      if(control_button_lft == 0){
-        default_umi_min = default_umi_min - 1;
-      }else if(control_button_rgt == 0){
-        default_umi_min = default_umi_min + 1;
-      }else if(control_button_slt == 0){
-        mode_screen = 0;
-        enable_c = 1;
-        control_button_lft = 1;
-        control_button_slt = 1;
-        control_button_rgt = 1;
-      }
-    }else if(mode == 2 && set_umi == 1){
-      posicionar_cursor(1, 3);
-      show_LCD("Ajuste o min");
-      posicionar_cursor(2, 1);
-      show_LCD("Umidade: ");
-      posicionar_cursor(2, 10);
-      show_LCD_float(default_umi_min, 1);
-
-      //control_button_slt = click_select();
-
-      if(control_button_lft == 0){
-        default_umi_min = default_umi_min - 1;
-      }else if(control_button_rgt == 0){
-        default_umi_min = default_umi_min + 1;
-      }else if(control_button_slt == 0){
-        mode_screen = 4;
-        enable_c = 1;
-      }
+    posicionar_cursor(1, 5);
+    show_LCD("Umidade:");
+    posicionar_cursor(2,2);
+    show_LCD("Min");
+    posicionar_cursor(2,8);
+    cmd_LCD(127,15);
+    posicionar_cursor(2,13);
+    show_LCD("Max");
+    
+    Serial.println(mode_screen);
+    
+    if(control_button_lft == 0){
+      mode = 6;
+      mode_screen = 6;
+      enable_c = 1;
+      Serial.println("Indo para tela 7");
+      Serial.println(mode_screen);
+    }else if(control_button_slt == 0){
+      mode = 1;
+      mode_screen = 1;
+      enable_c = 1;
+      Serial.println("Indo para tela 2");
+      Serial.println(mode_screen);
+    }else if(control_button_rgt == 0){
+      mode = 7;
+      mode_screen = 7;
+      enable_c = 1;
+      Serial.println("Indo para tela 8");
+      Serial.println(mode_screen);
     }
   }
 }
 
-// Ajustando Umidade Máxima
+// Ajustando Umidade Mínima
 void screen_7(){
   if(enable_c == 1){
     cmd_LCD(0x01, 0);
     enable_c = 0;
   }
-  while(mode_screen == 4){
+
+  while(mode_screen == 6){
     control_button_lft = 1;
     control_button_slt = 1;
     control_button_rgt = 1;
-    if(mode == 3 && set_umi == 1){
-      posicionar_cursor(1, 3);
-      show_LCD("Ajuste o max");
-      posicionar_cursor(2, 1);
-      show_LCD("Umidade: ");
-      posicionar_cursor(2, 10);
-      show_LCD_float(default_umi_max, 1);
 
-      //control_button_slt = click_select();
+    posicionar_cursor(1, 3);
+    show_LCD("Umidade Min");
+    posicionar_cursor(2,2);
+    show_LCD("-");
+    posicionar_cursor(2,15);
+    show_LCD("+");
+    posicionar_cursor(2, 7);
+    show_LCD_float(default_umi_min, 1);
 
-      if(control_button_lft == 0){
-        default_umi_max = default_umi_max - 1;
-      }else if(control_button_rgt == 0){
-        default_umi_max = default_umi_max + 1;
-      }else if(control_button_slt == 0){
-        mode_screen = 0;
-        enable_c = 1;
-        control_button_lft = 1;
-        control_button_slt = 1;
-        control_button_rgt = 1;
-      }
-    }else if(mode == 2 && set_umi == 1){
-      posicionar_cursor(1, 3);
-      show_LCD("Ajuste o max");
-      posicionar_cursor(2, 1);
-      show_LCD("Umidade: ");
-      posicionar_cursor(2, 10);
-      show_LCD_float(default_umi_max, 1);
+    //control_button_slt = click_select();
 
-      //control_button_slt = click_select();
+    if(control_button_lft == 0){
+      default_umi_min = default_umi_min - 1;
+    }else if(control_button_rgt == 0){
+      default_umi_min = default_umi_min + 1;
+    }else if(control_button_slt == 0){
+      mode_screen = 0;
+      enable_c = 1;
+      control_button_lft = 1;
+      control_button_slt = 1;
+      control_button_rgt = 1;
+    }
+  }
+}
 
-      if(control_button_lft == 0){
-        default_umi_max = default_umi_max - 1;
-      }else if(control_button_rgt == 0){
-        default_umi_max = default_umi_max + 1;
-      }else if(control_button_slt == 0){
-        mode_screen = 0;
-        enable_c = 1;
-        control_button_lft = 1;
-        control_button_slt = 1;
-        control_button_rgt = 1;
-      }
+// Ajustando Umidade Máxima
+void screen_8(){
+  if(enable_c == 1){
+    cmd_LCD(0x01, 0);
+    enable_c = 0;
+  }
+
+  while(mode_screen == 7){
+    control_button_lft = 1;
+    control_button_slt = 1;
+    control_button_rgt = 1;
+
+    posicionar_cursor(1, 3);
+    show_LCD("Umidade Max");
+    posicionar_cursor(2,2);
+    show_LCD("-");
+    posicionar_cursor(2,15);
+    show_LCD("+");
+    posicionar_cursor(2, 7);
+    show_LCD_float(default_umi_max, 1);
+
+    //control_button_slt = click_select();
+
+    if(control_button_lft == 0){
+      default_umi_max = default_umi_max - 1;
+    }else if(control_button_rgt == 0){
+      default_umi_max = default_umi_max + 1;
+    }else if(control_button_slt == 0){
+      mode_screen = 0;
+      enable_c = 1;
+      control_button_lft = 1;
+      control_button_slt = 1;
+      control_button_rgt = 1;
+    }
+  }
+}
+
+void show_amostragem(){
+  if(enable_c == 1){
+    cmd_LCD(0x01, 0);
+    enable_c = 0;
+  }
+
+  while(mode_screen == 8){
+    control_button_lft = 1;
+    control_button_slt = 1;
+    control_button_rgt = 1;
+    
+    cmd_LCD(0X80, 0);
+
+    char str_samp[20];
+    dtostrf(amostragem, 1,0, str_samp);
+    
+    posicionar_cursor(1,5);
+    show_LCD("Tempo [s]");
+    cmd_LCD(0XC0, 0);
+    show_LCD("  -   ");
+    show_LCD_float(amostragem, 1);
+    posicionar_cursor(2,14);
+    show_LCD("+");
+
+    Serial.println(amostragem);
+
+    if(control_button_lft == 0 && amostragem > 0){
+      amostragem = amostragem - 1;
+    }else if(control_button_rgt == 0){
+      amostragem = amostragem + 1;
+    }else if(control_button_slt == 0 && amostragem > 0){
+      mode_screen = 0;
+      enable_c = 1;
+      control_button_lft = 1;
+      control_button_slt = 1;
+      control_button_rgt = 1;
     }
   }
 }
 
 void alert_led(){
-  if(mode == 1 && (h < default_umi_min || t < default_temp_min)){
+  if((mode == 3 || mode == 6) && (h < default_umi_min || t < default_temp_min)){
     PORTH |= (1 << BUZZER);
     PORTC |= (1 << led_red);
     PORTC &= ~(1 << led_yellow);
     PORTC &= ~(1 << led_green);
-  }else if(mode == 1 && ((h >= default_umi_min && h <= default_umi_min*1.1) || (t >= default_temp_min && t <= default_temp_min*1.1))){
+    Serial.println("LED RED bibi");
+  }else if((mode == 3 || mode == 6) && ((h >= default_umi_min && h <= default_umi_min*1.1) || (t >= default_temp_min && t <= default_temp_min*1.1))){
     PORTH &= ~(1 << BUZZER);
     PORTC &= ~(1 << led_red);
     PORTC |= (1 << led_yellow);
     PORTC &= ~(1 << led_green);
-  }else if(mode == 1 && ((h > default_umi_min) && (t > default_temp_min))){
+    Serial.println("LED Yellow bibi");
+  }else if((mode == 3 || mode == 6) && ((h > default_umi_min) && (t > default_temp_min))){
+    PORTH &= ~(1 << BUZZER);
+    PORTC &= ~(1 << led_red);
+    PORTC &= ~(1 << led_yellow);
+    PORTC |= (1 << led_green);
+    Serial.println("LED Green bibi");
+  }
+
+  if((mode == 6 || mode == 7) && ((h < default_umi_min || h > default_umi_max) || (t < default_temp_min || t > default_temp_max))){
+    PORTH |= (1 << BUZZER);
+    PORTC |= (1 << led_red);
+    PORTC &= ~(1 << led_yellow);
+    PORTC &= ~(1 << led_green);
+  }else if(mode == 7 && (((h >= default_umi_min && h <= default_umi_min*1.1)||(h <= default_umi_max && h >= default_umi_max*0.9)) || ((t >= default_temp_min && t <= default_temp_min*1.1)||(t <= default_temp_max && t >= default_temp_max*0.9)))){
+    PORTH &= ~(1 << BUZZER);
+    PORTC &= ~(1 << led_red);
+    PORTC |= (1 << led_yellow);
+    PORTC &= ~(1 << led_green);
+  }else if(mode == 7 && ((h > default_umi_min && h < default_umi_max) || (t > default_temp_min && t < default_temp_max))){
     PORTH &= ~(1 << BUZZER);
     PORTC &= ~(1 << led_red);
     PORTC &= ~(1 << led_yellow);
     PORTC |= (1 << led_green);
   }
 
-  if(mode == 2 && ((h < default_umi_min || h > default_umi_max) || (t < default_temp_min || t > default_temp_max))){
+  if((mode == 4 || mode == 7) && ((h > default_umi_max) || (t > default_temp_max))){
     PORTH |= (1 << BUZZER);
     PORTC |= (1 << led_red);
     PORTC &= ~(1 << led_yellow);
     PORTC &= ~(1 << led_green);
-  }else if(mode == 2 && (((h >= default_umi_min && h <= default_umi_min*1.1)||(h <= default_umi_max && h >= default_umi_max*0.9)) || ((t >= default_temp_min && t <= default_temp_min*1.1)||(t <= default_temp_max && t >= default_temp_max*0.9)))){
+  }else if((mode == 4 || mode == 7) && ((h >= default_umi_max*0.9) || (t >= default_temp_max*0.9))) {
     PORTH &= ~(1 << BUZZER);
     PORTC &= ~(1 << led_red);
     PORTC |= (1 << led_yellow);
     PORTC &= ~(1 << led_green);
-  }else if(mode == 2 && ((h > default_umi_min && h < default_umi_max) || (t > default_temp_min && t < default_temp_max))){
-    PORTH &= ~(1 << BUZZER);
-    PORTC &= ~(1 << led_red);
-    PORTC &= ~(1 << led_yellow);
-    PORTC |= (1 << led_green);
-  }
-
-  if(mode == 3 && ((h > default_umi_max) || (t > default_temp_max))){
-    PORTH |= (1 << BUZZER);
-    PORTC |= (1 << led_red);
-    PORTC &= ~(1 << led_yellow);
-    PORTC &= ~(1 << led_green);
-  }else if(mode == 3 && ((h >= default_umi_max*0.9) || (t >= default_temp_max*0.9))) {
-    PORTH &= ~(1 << BUZZER);
-    PORTC &= ~(1 << led_red);
-    PORTC |= (1 << led_yellow);
-    PORTC &= ~(1 << led_green);
-  }else if(mode == 3 && ((h < default_umi_max) || (t < default_temp_max))){
+  }else if((mode == 4 || mode == 7) && ((h < default_umi_max) || (t < default_temp_max))){
     PORTH &= ~(1 << BUZZER);
     PORTC &= ~(1 << led_red);
     PORTC &= ~(1 << led_yellow);
@@ -819,6 +836,7 @@ int main() {
   posicionar_cursor(2, 4);
   show_LCD("Solutions");
   _delay_ms(2000);
+
   while(true){
     if(mode_screen == 0){
       screen_1();
@@ -830,6 +848,14 @@ int main() {
       screen_4();
     }else if(mode_screen == 4){
       screen_5();
+    }else if (mode_screen == 5){
+      screen_6();
+    }else if(mode_screen == 6){
+      screen_7();
+    }else if(mode_screen == 7){
+      screen_8();
+    }else if(mode_screen == 8){
+      show_amostragem();
     }
   }
   return 0;
