@@ -63,10 +63,12 @@ O projeto inclui um código que faz uso de [funções nativas](src/code-native-c
 
 | Dispositivo de monitoramento e sensores - InovaTech |
 |-----------------------------------------------------|
-|<img alt="Modelo do dispositivo de monitoramento e sensores" src="assets/design-dispositivo.png" height="400em"/>|
+|<img alt="Modelo do dispositivo de monitoramento e sensores" src="./assets/design-dispositivo.png" height="200em"/>|
 
 O designer do dispositivo de monitoramento ambiental é uma solução funcional e versátil, projetada para oferecer informações precisas e acessíveis sobre as condições ambientais. Com três botões intuitivos, a configuração do dispositivo é simplificada, permitindo que os usuários personalizem facilmente as configurações. Os três LEDs coloridos - vermelho, amarelo e verde - fornecem uma representação visual instantânea das medições do sensor. O LED vermelho indica alertas de condições ambientais fora dos níveis estipulados, enquanto o amarelo sinaliza condições próximas dos limites e o verde indica condições seguras dentro dos parâmetros desejados.
+
 Além disso, o dispositivo é equipado com um buzzer que emite um som audível apenas em situações de alerta vermelho, aprimorando a capacidade de alertar os usuários sobre condições críticas do ambiente. O display LCD 16x2 oferece uma visualização clara das informações de temperatura e umidade, tornando a leitura e interpretação dos dados simples e acessível.
+
 Este dispositivo oferece duas opções de sensores para atender às necessidades específicas dos usuários. O modelo com o sensor DHT22 mede com precisão temperatura e umidade, enquanto o modelo com o DHT11 é uma alternativa econômica que ainda oferece informações essenciais para o monitoramento ambiental. 
 Além disso, o sensor de fumaça integrado permite o monitoramento de incêndio, tornando este dispositivo uma solução completa para a segurança e o acompanhamento das condições ambientais em uma variedade de cenários.
 
@@ -76,7 +78,7 @@ A implementação do projeto foi inicialmente simulada na plataforma [Wokwi](htt
 
 | Simulação realizada no Wokwi | Montagem do circuito realizado |
 |------------------------------|--------------------------------|
-|![simulação Wokwi](assets/simulacao-wowki.png)|![montagem do circuito](assets/montagem-circuito.jpeg)|
+|<img alt="simulação Wokwi" src="./assets/simulacao-wokwi.png" height="300em"/>|<img alt="montagem do circuito" src="./assets/montagem-circuito.jpeg"  height="300em"/>|
 
 Para a montagem do circuito foram utilizados os seguintes componentes:
 - Arduino-Mega 2560
