@@ -59,7 +59,7 @@ O projeto inclui um código que faz uso de [funções nativas](src/code-native-c
 | 0x90                | 144             | Posicionar o cursor na primeira linha e na quinta coluna.                                              |
 | 0xD0                | 208             | Posicionar o cursor na segunda linha e na quinta coluna.                                               |
 
-## Design do Modelo
+## 🎨 Design do Modelo
 
 | Dispositivo de monitoramento e sensores - InovaTech |
 |-----------------------------------------------------|
@@ -89,7 +89,7 @@ Para a montagem do circuito foram utilizados os seguintes componentes:
 - LEDs
 - Protoboard
 
-Para visualizar uma simulação do sistema de monitoramento ambiental em ação, confira [este link](https://www.loom.com/share/657320af3b4c44f0aaf78eeba94cd8a4?sid=b937ec63-254c-4ddb-9b63-85fcbb1e88e6). A simulação demonstra o funcionamento do equipamento, incluindo a medição de temperatura, umidade, e outras funcionalidades. 
+Para visualizar uma simulação do sistema de monitoramento ambiental em ação, confira [este link](https://youtu.be/Mp1G7Txdk1s?si=ino0YuBbWcMTFsu8). A simulação demonstra o funcionamento do equipamento, incluindo a medição de temperatura, umidade, e outras funcionalidades. 
 
 ## ✍️ Authors
 
